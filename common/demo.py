@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 import imageio
 import numpy as np
 from PIL import Image
@@ -6,7 +8,7 @@ import PIL.ImageDraw as ImageDraw
 import gym
 
 
-def _label_with_episode_number(frame, episode_num):
+def label_with_episode_number(frame, episode_num):
     im = Image.fromarray(frame)
     drawer = ImageDraw.Draw(im)
     if np.mean(im) < 128:
@@ -17,21 +19,7 @@ def _label_with_episode_number(frame, episode_num):
     return im
 
 
-def save_random_agent_gif(env):
-    frames = []
-    for i in range(500):
-        state = env.reset()
-        for t in range(500):
-            action = env.action_space.sample()
-            frame = env.render(mode='rgb_array')
-            frames.append(_label_with_episode_number(frame, episode_num=i))
-            state, _, done, _ = env.step(action)
-            if done:
-                print(f"breaking in {t}")
-                break
-    env.close()
+def save_random_agent_gif(frames:list):
+    dest_dir = "./videos/"
+    Path(dest_dir).mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(os.path.join('./videos/', 'random_agent.gif'), frames, fps=60)
-
-
-env = gym.make('CartPole-v1')
-save_random_agent_gif(env)
