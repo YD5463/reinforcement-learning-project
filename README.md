@@ -1,8 +1,7 @@
 # reinforcement-learning-project
  
-## TODO:
- - Q-learning
+## Done:
+ - Q-learning - Main & Target Network
  - SARSA
- - Main & Target Network
  - REINFORCE(MC)
  - Actor Critic
