@@ -12,7 +12,7 @@ GAME_NAME = "SpaceInvaders-v0"
 
 
 def save_agent_game(frames: List[np.ndarray], dest_dir="outputs/videos/"):
-    dest_dir = Path(dest_dir) / f"agent-{uuid.uuid4()[:8]}"
+    dest_dir = Path(dest_dir) / f"agent-{str(uuid.uuid4())[:8]}"
     dest_dir.mkdir(parents=True, exist_ok=True)
     print(f"frames number: {len(frames)}")
     for i,frame in enumerate(frames):

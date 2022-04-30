@@ -30,8 +30,29 @@ def create_my_model1(env: Env):
     return keras.Model(inputs=inputs, outputs=action)
 
 
+def create_actor_critic_model1(env: Env):
+    inputs = layers.Input(shape=env.observation_space.shape)
+    layer1 = layers.Conv2D(filters=10, kernel_size=(3, 3), strides=2, activation="relu")(inputs)
+    layer2 = layers.Conv2D(filters=8, kernel_size=(3, 3), activation="relu")(layer1)
+    common = layers.MaxPooling2D(pool_size=(3, 3), padding='valid')(layer2)
+    layer3 = layers.Dense(512, activation="relu")(layers.Flatten()(common))
+    action = layers.Dense(get_action_space_len(env), activation="softmax")(layer3)
+    layer4 = layers.Dense(256, activation="relu")(common)
+    layer5 = layers.Dense(50, activation="relu")(layer4)
+    critic = layers.Dense(1)(layer5)
+    return keras.Model(inputs=inputs, outputs=[action, critic])
+
+
+def reinforce_mc_model(env: Env):
+    model = keras.Sequential()
+    model.add(layers.Dense(255, input_shape=env.observation_space.shape, activation='relu'))
+    model.add(layers.Dense(128, activation='relu'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(get_action_space_len(env), activation='softmax'))
+    return model
+
+
 def predict_action(model, state: np.ndarray) -> np.ndarray:
-    state_tensor = tf.convert_to_tensor(state)
-    state_tensor = tf.expand_dims(state_tensor, 0)
+    state_tensor = tf.expand_dims(tf.convert_to_tensor(state), 0)
     action_probs = model(state_tensor, training=False)
     return tf.argmax(action_probs[0]).numpy()

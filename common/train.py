@@ -1,4 +1,3 @@
-import datetime
 import time
 import uuid
 from collections import deque
@@ -9,6 +8,10 @@ from gym import Env
 from tensorflow import keras
 from common.env_wrappers.utils import get_action_space_len
 from common.models import predict_action
+
+
+def unique_of(text: str) -> str:
+    return f"{text}-{str(uuid.uuid4())[:8]}"
 
 
 class History:
@@ -54,8 +57,9 @@ def q_learning_main_and_target_train(
         gamma=0.99, epsilon=1.0, lr=0.00025,
         batch_size=32, update_target_network=10000, update_after_actions=4,
         max_memory_length=100000, max_time_s=120 * 60,
-        num_first_exploration_steps=5000,checkpoint=5000,
+        num_first_exploration_steps=5000, checkpoint=5000,
 ) -> str:
+    _model_name = unique_of("q-learning-main-target")
     model = model_creator(env)
     model_target = model_creator(env)
     optimizer = keras.optimizers.Adam(learning_rate=lr, clipnorm=1.0)
@@ -100,20 +104,22 @@ def q_learning_main_and_target_train(
                 model_target.set_weights(model.get_weights())
                 print(f"running reward: {running_reward} at episode {episode_count}, frame count {frame_count}")
         if episode_count % checkpoint == 0:
-            save_output = f"outputs/model-checkpoint-{episode_count // checkpoint}"
+            save_output = f"outputs/{_model_name}-checkpoint-{episode_count // checkpoint}"
             model.save(save_output)
         print(f"done episode with reward {episode_reward}")
         episode_count += 1
-    save_output = f"outputs/q_learning_main_and_target_train-{uuid.uuid4()[:8]}"
+    save_output = f"outputs/{_model_name}"
     model.save(save_output)
     return save_output
 
 
 def simple_sarsa(
         env: Env, model_creator: Callable[[Env], keras.Model],
-        gamma=0.99, epsilon=1.0, lr=0.00025, max_time_s=120 * 60,
-        num_first_exploration_steps=5000, checkpoint=5000,
+        gamma: float = 0.99, epsilon: float = 1.0, lr: float = 0.00025,
+        max_time_s: int = 120 * 60, num_first_exploration_steps: int = 5000,
+        checkpoint: int = 5000,
 ):
+    _model_name = unique_of("simple-sarsa")
     model = model_creator(env)
     optimizer = keras.optimizers.Adam(learning_rate=lr, clipnorm=1.0)
     running_reward, episode_count, frame_count = 0, 0, 0
@@ -150,11 +156,137 @@ def simple_sarsa(
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
         if episode_count % checkpoint == 0:
-            save_output = f"outputs/model-checkpoint-{episode_count // checkpoint}"
+            save_output = f"outputs/{_model_name}-checkpoint-{episode_count // checkpoint}"
             model.save(save_output)
 
         print(f"done episode with reward {episode_reward}")
         episode_count += 1
-    save_output = f"outputs/simple_sarsa-{uuid.uuid4()[:8]}"
+    save_output = f"outputs/{_model_name}"
+    model.save(save_output)
+    return save_output
+
+
+def actor_critic(
+        env: Env, model_creator: Callable[[Env], keras.Model],
+        gamma: float = 0.99, lr: float = 0.01, max_time_s: int = 120 * 60,
+        checkpoint: int = 5000,
+) -> str:
+    _model_name = unique_of("actor-critic")
+    model = model_creator(env)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+    huber_loss = keras.losses.Huber()
+    eps = np.finfo(np.float32).eps.item()
+    episode_count, running_reward = 0, 0
+    num_actions = get_action_space_len(env)
+    start_time = time.time()
+    while (time.time() - start_time) < max_time_s:
+        state = env.reset()
+        episode_reward = 0
+        done = False
+        action_probs_history, critic_value_history, rewards_history = [], [], []
+        with tf.GradientTape() as tape:
+            while not done:
+                state = tf.expand_dims(tf.convert_to_tensor(state), 0)
+                action_probs, critic_value = model(state)
+                critic_value_history.append(critic_value[0, 0])
+
+                action = np.random.choice(num_actions, p=np.squeeze(action_probs))
+                action_probs_history.append(tf.math.log(action_probs[0, action]))
+
+                state, reward, done, _ = env.step(action)
+                rewards_history.append(reward)
+                episode_reward += reward
+
+            running_reward = 0.05 * episode_reward + (1 - 0.05) * running_reward
+
+            returns = []
+            discounted_sum = 0
+            for r in rewards_history[::-1]:
+                discounted_sum = r + gamma * discounted_sum
+                returns.insert(0, discounted_sum)
+            returns = np.array(returns)
+            returns = (returns - np.mean(returns)) / (np.std(returns) + eps)
+            returns = returns.tolist()
+
+            actor_losses, critic_losses = [], []
+            for log_prob, value, ret in zip(action_probs_history, critic_value_history, returns):
+                diff = ret - value
+                actor_losses.append(-log_prob * diff)
+                critic_losses.append(
+                    huber_loss(tf.expand_dims(value, 0), tf.expand_dims(ret, 0))
+                )
+
+            loss_value = sum(actor_losses) + sum(critic_losses)
+            grads = tape.gradient(loss_value, model.trainable_variables)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+        episode_count += 1
+        if episode_count % 10 == 0:
+            print(f"running reward: {running_reward} at episode {episode_count}")
+        if episode_count % checkpoint == 0:
+            save_output = f"outputs/{_model_name}-checkpoint-{episode_count // checkpoint}"
+            model.save(save_output)
+
+    save_output = f"outputs/{_model_name}"
+    model.save(save_output)
+    return save_output
+
+
+def reinforce_mc(
+        env: Env, model_creator: Callable[[Env], keras.Model],
+        gamma: float = 0.99, lr: float = 0.01, max_time_s: int = 120 * 60,
+        checkpoint: int = 5000,
+):
+    _model_name = unique_of("reinforce-mc")
+    model = model_creator(env)
+    model.compile(loss="categorical_crossentropy", optimizer=keras.optimizers.Adam(learning_rate=lr))
+    states, actions, rewards = [], [], []
+    scores, episodes = [], []
+    action_size = get_action_space_len(env)
+    state_shape = env.observation_space.shape
+    start_time = time.time()
+    i = 0
+    while (time.time() - start_time) < max_time_s:
+        state = env.reset()
+        done = False
+        score = 0
+        while not done:
+            policy = model.predict(tf.expand_dims(tf.convert_to_tensor(state), 0), batch_size=1).flatten()
+            action = np.random.choice(action_size, 1, p=policy)[0]
+            next_state, reward, done, info = env.step(action)
+
+            states.append(state)
+            rewards.append(reward)
+            actions.append(action)
+
+            score += reward
+            state = next_state
+
+        episode_length = len(states)
+        discounted_rewards = np.zeros_like(rewards)
+        running_add = 0
+        for t in reversed(range(0, len(rewards))):
+            running_add = running_add * gamma + rewards[t]
+            discounted_rewards[t] = running_add
+
+        discounted_rewards -= np.mean(discounted_rewards)
+        discounted_rewards /= np.std(discounted_rewards)
+
+        update_inputs = np.zeros((episode_length,) + state_shape)
+        advantages = np.zeros((episode_length, action_size))
+
+        for j in range(episode_length):
+            update_inputs[j] = states[j]
+            advantages[j][actions[j]] = discounted_rewards[j]
+
+        model.fit(update_inputs, advantages, epochs=1, verbose=0)
+        scores.append(score)
+        print(f"episode: {i}, score:{score}")
+        if i % checkpoint == 0:
+            save_output = f"outputs/{_model_name}-checkpoint-{i // checkpoint}"
+            model.save(save_output)
+        i += 1
+
+    save_output = f"outputs/{_model_name}"
     model.save(save_output)
     return save_output
