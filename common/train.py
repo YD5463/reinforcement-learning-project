@@ -1,5 +1,6 @@
 import datetime
 import time
+import uuid
 from collections import deque
 from typing import Callable
 import numpy as np
@@ -48,7 +49,7 @@ def decay_epsilon(epsilon):
     return max(epsilon, epsilon_min)
 
 
-def main_and_target_train(
+def q_learning_main_and_target_train(
         env: Env, model_creator: Callable[[Env], keras.Model],
         gamma=0.99, epsilon=1.0, lr=0.00025,
         batch_size=32, update_target_network=10000, update_after_actions=4,
@@ -103,15 +104,15 @@ def main_and_target_train(
             model.save(save_output)
         print(f"done episode with reward {episode_reward}")
         episode_count += 1
-    save_output = f"outputs/model-{datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+    save_output = f"outputs/q_learning_main_and_target_train-{uuid.uuid4()[:8]}"
     model.save(save_output)
     return save_output
 
 
-def sarsa(
+def simple_sarsa(
         env: Env, model_creator: Callable[[Env], keras.Model],
         gamma=0.99, epsilon=1.0, lr=0.00025, max_time_s=120 * 60,
-        num_first_exploration_steps=5000,checkpoint=5000,
+        num_first_exploration_steps=5000, checkpoint=5000,
 ):
     model = model_creator(env)
     optimizer = keras.optimizers.Adam(learning_rate=lr, clipnorm=1.0)
@@ -154,6 +155,6 @@ def sarsa(
 
         print(f"done episode with reward {episode_reward}")
         episode_count += 1
-    save_output = f"outputs/model-{datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+    save_output = f"outputs/simple_sarsa-{uuid.uuid4()[:8]}"
     model.save(save_output)
     return save_output
