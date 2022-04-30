@@ -94,6 +94,6 @@ def main_and_target_train(
             del episode_reward_history[:1]
         running_reward = np.mean(episode_reward_history)
         episode_count += 1
-    save_output = f"outputs/model-{datetime.datetime.now()}"
+    save_output = f"outputs/model-{datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
     model.save(save_output)
     return save_output

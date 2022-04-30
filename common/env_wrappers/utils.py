@@ -1,10 +1,8 @@
 import datetime
-import os
 from pathlib import Path
-import imageio
+from typing import List
 import numpy as np
 from PIL import Image
-import PIL.ImageDraw as ImageDraw
 import gym
 from gym import Env
 from matplotlib import pyplot as plt
@@ -13,20 +11,13 @@ from common.env_wrappers.concat_obs_wrapper import ConcatObs
 GAME_NAME = "SpaceInvaders-v0"
 
 
-def label_with_episode_number(frame, episode_num):
-    im = Image.fromarray(frame)
-    drawer = ImageDraw.Draw(im)
-    if np.mean(im) < 128:
-        text_color = (255, 255, 255)
-    else:
-        text_color = (0, 0, 0)
-    drawer.text((im.size[0] / 20, im.size[1] / 18), f'Episode: {episode_num + 1}', fill=text_color)
-    return im
-
-
-def save_random_agent_gif(frames: list, dest_dir="outputs/videos/"):
-    Path(dest_dir).mkdir(parents=True, exist_ok=True)
-    imageio.mimwrite(os.path.join(dest_dir, f"agent-{datetime.datetime.now()}.gif"), frames, fps=60)
+def save_agent_game(frames: List[np.ndarray], dest_dir="outputs/videos/"):
+    dest_dir = Path(dest_dir) / f"agent-{datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    print(f"frames number: {len(frames)}")
+    for i,frame in enumerate(frames):
+        im = Image.fromarray((frame*255).astype(np.uint8))
+        im.save(dest_dir / f"{i}.jpeg")
 
 
 def get_env(seed=42) -> Env:
@@ -54,10 +45,10 @@ def gif_model_demo(predict_func, steps_num: int):
     for i in range(steps_num):
         state, reward, done, _ = env.step(predict_func(state))
         state = np.array(state)
-        frames.append(label_with_episode_number(state, i))
+        frames.append(state[..., 0])
         if done:
             break
-    save_random_agent_gif(frames)
+    save_agent_game(frames)
 
 
 def get_action_space_len(env: Env) -> int:
