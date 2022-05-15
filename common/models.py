@@ -56,3 +56,9 @@ def predict_action(model, state: np.ndarray) -> np.ndarray:
     state_tensor = tf.expand_dims(tf.convert_to_tensor(state), 0)
     action_probs = model(state_tensor, training=False)
     return tf.argmax(action_probs[0]).numpy()
+
+
+def predict_action_ac(model, state: np.ndarray) -> np.ndarray:
+    state_tensor = tf.expand_dims(tf.convert_to_tensor(state), 0)
+    action_probs,_ = model(state_tensor, training=False)
+    return tf.argmax(np.squeeze(action_probs)).numpy()

@@ -10,9 +10,9 @@ from common.env_wrappers.utils import get_env, gif_model_demo
 from common.models import (
     create_my_model1,
     predict_action,
-    create_from_doc_model,
     create_actor_critic_model1,
     reinforce_mc_model,
+    predict_action_ac,
 )
 
 
@@ -47,7 +47,7 @@ def experiment3():
     )
     print(f"saved path: {saved_path}")
     model = keras.models.load_model(saved_path)
-    gif_model_demo(lambda state: predict_action(model, state), steps_num=10000)
+    gif_model_demo(lambda state: predict_action_ac(model, state), steps_num=10000)
 
 
 def experiment4():
