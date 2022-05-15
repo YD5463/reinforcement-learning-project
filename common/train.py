@@ -147,7 +147,7 @@ def simple_sarsa(
                 updated_q_values = reward + gamma * action
                 updated_q_values = updated_q_values * (1 - done) - done
                 masks = tf.one_hot(action, num_actions)
-                q_values = model(state)
+                q_values = model(np.expand_dims(state, axis=0))
                 q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
                 loss = loss_function(updated_q_values, q_action)
             state = state_next
