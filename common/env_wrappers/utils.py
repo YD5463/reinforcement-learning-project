@@ -13,12 +13,11 @@ from common.env_wrappers.concat_obs_wrapper import ConcatObs
 GAME_NAME = "SpaceInvaders-v0"
 
 
-
 def get_env(seed=42) -> Env:
     env = gym.make(GAME_NAME)
     env = ConcatObs(env, k=4)
     print(f"game name: {GAME_NAME}\nobservation space: {env.observation_space.shape}, "
-          f"action space: {env.action_space.n}")
+          f"action space: {get_action_space_len(env)}")
     env.seed(seed)
     return env
 
@@ -57,6 +56,19 @@ def save_agent_game(frames: List[np.ndarray], dest_dir="outputs/videos/"):
     for i,frame in enumerate(frames):
         im = Image.fromarray((frame*255).astype(np.uint8))
         im.save(dest_dir / f"{i}.jpeg")
+
+
+def save_agent_game_video(frames: List[np.ndarray], dest_dir="outputs/videos"):
+    dest_path = f"{dest_dir}/agent-{str(uuid.uuid4())[:8]}.avi"
+    print(f"frames number: {len(frames)}")
+    images = []
+    for i, frame in enumerate(frames):
+        images.append((frame*255).astype(np.uint8))
+    size = (images[0].shape[0], images[0].shape[1])
+    out = cv2.VideoWriter(dest_path, cv2.VideoWriter_fourcc(*'XVID'), 15, size)
+    for image in images:
+        out.write(image)
+    out.release()
 
 
 def gif_model_demo(predict_func, steps_num: int):
