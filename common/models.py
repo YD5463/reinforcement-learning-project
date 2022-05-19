@@ -32,8 +32,9 @@ def create_my_model1(env: Env):
 
 def create_actor_critic_model1(env: Env):
     inputs = layers.Input(shape=env.observation_space.shape)
-    layer1 = layers.Conv2D(filters=10, kernel_size=(3, 3), strides=2, activation="relu")(inputs)
-    layer2 = layers.Conv2D(filters=8, kernel_size=(3, 3), activation="relu")(layer1)
+    layer1 = layers.Conv2D(filters=10, kernel_size=(3, 3), activation="relu")(inputs)
+    layer_max = layers.MaxPooling2D(pool_size=(3, 3), padding='valid')(layer1)
+    layer2 = layers.Conv2D(filters=8, kernel_size=(3, 3), activation="relu")(layer_max)
     common = layers.MaxPooling2D(pool_size=(3, 3), padding='valid')(layer2)
     layer3 = layers.Dense(512, activation="relu")(layers.Flatten()(common))
     action = layers.Dense(get_action_space_len(env), activation="softmax")(layer3)
