@@ -26,7 +26,7 @@ def test_model(saved_path,predict_func,test_name):
         gif_model_demo(lambda state: predict_func(model, state), steps_num=10000,
                        prefix_name=f"{test_name}-checkpoint-{checkpoint_number}")
     model = keras.models.load_model(saved_path)
-    gif_model_demo(predict_func, steps_num=10000, prefix_name=test_name)
+    gif_model_demo(lambda state: predict_func(model, state), steps_num=10000, prefix_name=test_name)
 
 
 def experiment1():
@@ -51,8 +51,8 @@ def experiment2():
 
 def experiment3():
     saved_path = actor_critic(
-        get_env(), create_actor_critic_model1, max_time_s=60 * 60 * 5,
-        gamma=0.99, lr=0.00025, checkpoint=5000,
+        get_env(), create_actor_critic_model1, max_time_s=60 * 2,
+        gamma=0.99, lr=0.00025, checkpoint=1,
     )
     test_model(saved_path,predict_action_ac, "actor-critic")
 
