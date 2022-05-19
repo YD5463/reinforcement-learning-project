@@ -33,35 +33,17 @@ def run_dummy_demo(env: Env, steps: int, print_period: int):
             observation, _, _, _ = env.step(1)
 
 
-def load_images_from_folder(folder):
-    images = []
-    for filename_idx in range(len(os.listdir(folder))):
-        img = cv2.imread(os.path.join(folder, f"{filename_idx}.jpeg"))
-        images.append(img)
-    return images
+# def save_agent_game(frames: List[np.ndarray], dest_dir="outputs/videos/"):
+#     dest_dir = Path(dest_dir) / f"agent-{str(uuid.uuid4())[:8]}"
+#     dest_dir.mkdir(parents=True, exist_ok=True)
+#     print(f"frames number: {len(frames)}")
+#     for i,frame in enumerate(frames):
+#         im = Image.fromarray(frame.astype(np.uint8))
+#         im.save(dest_dir / f"{i}.jpeg")
 
 
-def from_image_to_video(path):
-    images = load_images_from_folder(path)
-    height, width, layers = images[0].shape
-    size = (width, height)
-    out = cv2.VideoWriter('/videos/test.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-    for image in images:
-        out.write(image)
-    out.release()
-
-
-def save_agent_game(frames: List[np.ndarray], dest_dir="outputs/videos/"):
-    dest_dir = Path(dest_dir) / f"agent-{str(uuid.uuid4())[:8]}"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    print(f"frames number: {len(frames)}")
-    for i,frame in enumerate(frames):
-        im = Image.fromarray(frame.astype(np.uint8))
-        im.save(dest_dir / f"{i}.jpeg")
-
-
-def save_agent_game_video(frames: List[np.ndarray], dest_dir="outputs/videos"):
-    dest_path = f"{dest_dir}/agent-{str(uuid.uuid4())[:8]}.avi"
+def save_agent_game_video(frames: List[np.ndarray], dest_dir="outputs/videos",filename=""):
+    dest_path = f"{dest_dir}/{filename}.avi"
     print(f"frames number: {len(frames)}")
     size = (frames[0].shape[1],frames[0].shape[0])
     out = cv2.VideoWriter(dest_path, cv2.VideoWriter_fourcc(*'XVID'), 30, size)
@@ -70,7 +52,7 @@ def save_agent_game_video(frames: List[np.ndarray], dest_dir="outputs/videos"):
     out.release()
 
 
-def gif_model_demo(predict_func, steps_num: int):
+def gif_model_demo(predict_func, steps_num: int,prefix_name=""):
     env = gym.make(GAME_NAME)
     state = np.array(env.reset())
     real_frames = []
@@ -83,7 +65,7 @@ def gif_model_demo(predict_func, steps_num: int):
         real_frames.append(np.array(state).astype(np.uint8))
         if done:
             break
-    save_agent_game_video(real_frames)
+    save_agent_game_video(real_frames,filename=f"{prefix_name}-{str(uuid.uuid4())[:8]}")
 
 
 def get_action_space_len(env: Env) -> int:
