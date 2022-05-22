@@ -235,12 +235,12 @@ def actor_critic(
 def reinforce_mc(
         env: Env, model_creator: Callable[[Env], keras.Model],
         gamma: float = 0.99, lr: float = 0.01, max_time_s: int = 120 * 60,
-        checkpoint: int = 5000,
+        checkpoint: int = 5000, max_history: int = 10000
 ):
     _model_name = unique_of("reinforce-mc")
     model = model_creator(env)
     model.compile(loss="categorical_crossentropy", optimizer=keras.optimizers.Adam(learning_rate=lr))
-    states, actions, rewards = [], [], []
+    states, actions, rewards = deque([], maxlen=max_history), deque([], maxlen=max_history), deque([], maxlen=max_history)
     scores, episodes = [], []
     action_size = get_action_space_len(env)
     state_shape = env.observation_space.shape

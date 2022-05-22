@@ -46,6 +46,8 @@ def create_actor_critic_model1(env: Env):
 
 def reinforce_mc_model(env: Env):
     model = keras.Sequential()
+    model.add(layers.Conv2D(filters=5, kernel_size=(3, 3), activation="relu"))
+    model.add(layers.MaxPooling2D(pool_size=(3, 3), padding='valid'))
     model.add(layers.Dense(255, input_shape=env.observation_space.shape, activation='relu'))
     model.add(layers.Dense(128, activation='relu'))
     model.add(layers.Flatten())
@@ -61,5 +63,9 @@ def predict_action(model, state: np.ndarray) -> np.ndarray:
 
 def predict_action_ac(model, state: np.ndarray) -> np.ndarray:
     state_tensor = tf.expand_dims(tf.convert_to_tensor(state), 0)
-    action_probs,_ = model(state_tensor, training=False)
+    action_probs, _ = model(state_tensor, training=False)
     return tf.argmax(np.squeeze(action_probs)).numpy()
+
+
+def get_pre_trained_model(filepath: str):
+    return lambda env: keras.models.load_model(filepath)
