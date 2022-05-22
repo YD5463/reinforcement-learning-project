@@ -61,7 +61,7 @@ def experiment3():
 def experiment4():
     saved_path = reinforce_mc(
         get_env(), reinforce_mc_model, max_time_s=60 * 60 * 10,
-        gamma=0.9, lr=0.001, checkpoint=100,
+        gamma=0.95, lr=0.001, checkpoint=100,
     )
     test_model(saved_path, predict_action, "reinforce_mc")
 

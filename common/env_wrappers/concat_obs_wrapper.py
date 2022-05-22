@@ -7,18 +7,23 @@ import gym
 
 
 class ConcatObs(gym.Wrapper):
-    def __init__(self, env, k):
+    def __init__(self, env, k, resize: bool = True, skip_step: int = 1):
         gym.Wrapper.__init__(self, env)
         self.k = k
         self.frames = deque([], maxlen=k)
-        self.observation_space = spaces.Box(low=0, high=1, shape=(74, 110, k), dtype=np.float32)
+        self.resize = resize
+        self.skip_step = skip_step
+        shape = (74, 110, k)
+        if not resize:
+            shape = (210, 160, k)
+        self.observation_space = spaces.Box(low=0, high=1, shape=shape, dtype=np.float32)
 
-    @staticmethod
-    def _preprocess(frame):
-        processed = ConcatObs._rgb2gray(frame / 255)  # gray scale
-        resized = cv2.resize(processed, (110, 84), interpolation=cv2.INTER_LINEAR)
-        result = resized[10:97]
-        return result.astype(np.float32)
+    def _preprocess(self, frame):
+        processed = self._rgb2gray(frame / 255)  # gray scale
+        if self.resize:
+            processed = cv2.resize(processed, (110, 84), interpolation=cv2.INTER_LINEAR)
+            processed = processed[10:97]
+        return processed.astype(np.float32)
 
     def reset(self):
         ob = self.env.reset()
@@ -32,7 +37,7 @@ class ConcatObs(gym.Wrapper):
         return self._get_ob(), reward, done, info
 
     def _get_ob(self):
-        return np.stack(self.frames, axis=-1)
+        return np.stack([self.frames[i] for i in range(0, len(self.frames), self.skip_step)], axis=-1)
 
     @staticmethod
     def _rgb2gray(rgb):
