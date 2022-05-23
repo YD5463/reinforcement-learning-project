@@ -233,7 +233,7 @@ def actor_critic(
     model.save(save_output)
     fig = plt.figure(figsize=(12, 12))
     plt.plot(saved_rewards)
-    fig.suptitle('Episode Rewards', fontsize=20)
+    fig.suptitle('Episode reward as function of training episode number', fontsize=20)
     plt.xlabel('episode number', fontsize=18)
     plt.ylabel('episode reward', fontsize=16)
     fig.savefig(f'outputs/{_model_name}-rewards.png', dpi=fig.dpi)
