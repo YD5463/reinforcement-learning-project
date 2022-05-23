@@ -11,7 +11,7 @@ GAME_NAME = "SpaceInvaders-v0"
 SAVED_FRAMES = 24
 
 
-def get_env(seed=42) -> Env:
+def get_env(seed=42) -> ConcatObs:
     env = gym.make(GAME_NAME)
     env = ConcatObs(env, k=SAVED_FRAMES)
     print(f"game name: {GAME_NAME}\nobservation space: {env.observation_space.shape}, "
@@ -21,7 +21,7 @@ def get_env(seed=42) -> Env:
 
 
 def run_dummy_demo(env: Env, steps: int, print_period: int):
-    observation = env.reset()
+    _ = env.reset()
     for i in range(steps):
         if i % print_period == 0:
             observation, _, _, _ = env.step(1)
@@ -38,16 +38,12 @@ def save_agent_game_video(frames: List[np.ndarray], dest_dir="outputs/videos", f
 
 
 def gif_model_demo(predict_func, steps_num: int, prefix_name=""):
-    env = gym.make(GAME_NAME)
-    state = np.array(env.reset())
+    env = get_env()
+    state = env.reset()
     real_frames = []
-    frames = deque([], maxlen=SAVED_FRAMES)
     for i in range(steps_num):
-        frames.append(ConcatObs.rgb2gray(state))
-        if len(frames) < SAVED_FRAMES:
-            continue
-        state, reward, done, _ = env.step(predict_func(np.stack(frames, axis=-1)))
-        real_frames.append(np.array(state).astype(np.uint8))
+        state, reward, done, _ = env.step(predict_func(state))
+        real_frames.append(env.original_frame)
         if done:
             break
     save_agent_game_video(real_frames, filename=f"{prefix_name}-{str(uuid.uuid4())[:8]}")
