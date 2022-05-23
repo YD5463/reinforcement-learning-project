@@ -5,6 +5,7 @@ from typing import Callable
 import numpy as np
 import tensorflow as tf
 from gym import Env
+from matplotlib import pyplot as plt
 from tensorflow import keras
 from common.env_wrappers.utils import get_action_space_len
 from common.models import predict_action
@@ -171,6 +172,7 @@ def actor_critic(
         gamma: float = 0.99, lr: float = 0.01, max_time_s: int = 120 * 60,
         checkpoint: int = 5000,
 ) -> str:
+    saved_rewards = []
     _model_name = unique_of("actor-critic")
     model = model_creator(env)
     optimizer = keras.optimizers.Adam(learning_rate=lr)
@@ -221,14 +223,20 @@ def actor_critic(
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
         episode_count += 1
-        if episode_count % 10 == 0:
-            print(f"running reward: {running_reward} at episode {episode_count}")
+        saved_rewards.append(running_reward)
+        print(f"running reward: {running_reward} at episode {episode_count}")
         if episode_count % checkpoint == 0:
             save_output = f"outputs/{_model_name}-checkpoint-{episode_count // checkpoint}"
             model.save(save_output)
 
     save_output = f"outputs/{_model_name}"
     model.save(save_output)
+    fig = plt.figure(figsize=(12, 12))
+    plt.plot(saved_rewards)
+    fig.suptitle('Episode Rewards', fontsize=20)
+    plt.xlabel('episode number', fontsize=18)
+    plt.ylabel('episode reward', fontsize=16)
+    fig.savefig(f'outputs/{_model_name}-rewards.png', dpi=fig.dpi)
     return save_output
 
 
@@ -240,7 +248,8 @@ def reinforce_mc(
     _model_name = unique_of("reinforce-mc")
     model = model_creator(env)
     model.compile(loss="categorical_crossentropy", optimizer=keras.optimizers.Adam(learning_rate=lr))
-    states, actions, rewards = deque([], maxlen=max_history), deque([], maxlen=max_history), deque([], maxlen=max_history)
+    states, actions, rewards = deque([], maxlen=max_history), deque([], maxlen=max_history), deque([],
+                                                                                                   maxlen=max_history)
     scores, episodes = [], []
     action_size = get_action_space_len(env)
     state_shape = env.observation_space.shape

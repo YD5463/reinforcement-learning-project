@@ -1,5 +1,4 @@
 import uuid
-from collections import deque
 from typing import List
 import cv2
 import numpy as np
@@ -7,7 +6,7 @@ import gym
 from gym import Env
 from common.env_wrappers.concat_obs_wrapper import ConcatObs
 
-GAME_NAME = "SpaceInvaders-v0"
+GAME_NAME = "SpaceInvaders-ram-v0"
 SAVED_FRAMES = 24
 
 

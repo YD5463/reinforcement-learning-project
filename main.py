@@ -8,14 +8,13 @@ from common.train import (
     actor_critic,
     reinforce_mc
 )
-from common.env_wrappers.utils import get_env, gif_model_demo, run_dummy_demo
+from common.env_wrappers.utils import get_env, gif_model_demo
 from common.models import (
     create_my_model1,
     predict_action,
     create_actor_critic_model1,
     reinforce_mc_model,
-    predict_action_ac,
-    get_pre_trained_model,
+    predict_action_ac
 )
 
 
@@ -43,17 +42,17 @@ def experiment1():
 
 def experiment2():
     saved_path = simple_sarsa(
-        get_env(), create_my_model1, max_time_s=60 * 60 * 5,
-        gamma=0.99, epsilon=1.0, lr=0.00025,
-        num_first_exploration_steps=5000, checkpoint=5000,
+        get_env(), create_my_model1, max_time_s=60 * 60 * 12,
+        gamma=0.95, epsilon=0.99, lr=0.001,
+        num_first_exploration_steps=500, checkpoint=100,
     )
     test_model(saved_path, predict_action, "simple_sarsa")
 
 
 def experiment3():
     saved_path = actor_critic(
-        get_env(), create_actor_critic_model1, max_time_s=60 * 2,
-        gamma=0.99, lr=0.00025, checkpoint=1,
+        get_env(), create_actor_critic_model1, max_time_s=60 * 1,
+        gamma=0.95, lr=0.01, checkpoint=10,
     )
     test_model(saved_path, predict_action_ac, "actor-critic")
 
@@ -69,5 +68,5 @@ def experiment4():
 if __name__ == '__main__':
     # experiment1()
     # experiment2()
-    # experiment3()
-    experiment4()
+    experiment3()
+    # experiment4()
