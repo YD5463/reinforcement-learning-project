@@ -36,11 +36,11 @@ def create_actor_critic_model1(env: Env):
     layer_max = layers.MaxPooling2D(pool_size=(3, 3), padding='valid')(layer1)
     layer2 = layers.Conv2D(filters=8, kernel_size=(3, 3), activation="relu")(layer_max)
     common = layers.MaxPooling2D(pool_size=(3, 3), padding='valid')(layer2)
-    layer3 = layers.Dense(512, activation="relu")(layers.Flatten()(common))
-    action = layers.Dense(get_action_space_len(env), activation="softmax")(layer3)
-    layer4 = layers.Dense(256, activation="relu")(common)
-    layer5 = layers.Dense(50, activation="relu")(layer4)
-    critic = layers.Dense(1)(layer5)
+#    layer3 = layers.Dense(512, activation="relu")(layers.Flatten()(common))
+    action = layers.Dense(get_action_space_len(env), activation="softmax")(layers.Flatten()(common))
+#    layer4 = layers.Dense(256, activation="relu")(common)
+#    layer5 = layers.Dense(50, activation="relu")(layer4)
+    critic = layers.Dense(1)(layers.Flatten()(common))
     return keras.Model(inputs=inputs, outputs=[action, critic])
 
 
